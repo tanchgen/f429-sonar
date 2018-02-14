@@ -44,6 +44,7 @@ void *__dso_handle __attribute__ ((weak));
 #include <limits.h>
 #include <signal.h>
 
+
 void
 __initialize_args(int* p_argc, char*** p_argv);
 
@@ -104,6 +105,12 @@ kill(pid_t pid __attribute__((unused)), int sig __attribute__((unused)))
 // ----------------------------------------------------------------------------
 
 // If you need the empty definitions, remove the -ffreestanding option.
+#ifdef __STDC_HOSTED__
+#undef __STDC_HOSTED__
+#define __STDC_HOSTED__  1
+#endif
+
+
 
 #if __STDC_HOSTED__ == 1
 

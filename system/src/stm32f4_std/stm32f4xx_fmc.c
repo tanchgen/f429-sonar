@@ -363,6 +363,7 @@ void FMC_NORSRAMCmd(uint32_t FMC_Bank, FunctionalState NewState)
 @endverbatim
   * @{
   */
+#if !defined (STM32F429xx)
   
 /**
   * @brief  De-initializes the FMC NAND Banks registers to their default reset values.
@@ -593,6 +594,9 @@ uint32_t FMC_GetECC(uint32_t FMC_Bank)
   /* Return the error correction code value */
   return(eccval);
 }
+#endif
+
+
 /**
   * @}
   */
@@ -1089,8 +1093,14 @@ void FMC_ITConfig(uint32_t FMC_Bank, uint32_t FMC_IT, FunctionalState NewState)
   
   if (NewState != DISABLE)
   {
+    /* Enable the selected FMC_Bank4 interrupts */
+    if (FMC_Bank == FMC_Bank4_PCCARD)
+    {
+      FMC_Bank4->SR4 |= FMC_IT;
+    }
+#if !defined (STM32F429xx)
     /* Enable the selected FMC_Bank2 interrupts */
-    if(FMC_Bank == FMC_Bank2_NAND)
+    else if(FMC_Bank == FMC_Bank2_NAND)
     {
       FMC_Bank2->SR2 |= FMC_IT;
     }
@@ -1099,11 +1109,7 @@ void FMC_ITConfig(uint32_t FMC_Bank, uint32_t FMC_IT, FunctionalState NewState)
     {
       FMC_Bank3->SR3 |= FMC_IT;
     }
-    /* Enable the selected FMC_Bank4 interrupts */
-    else if (FMC_Bank == FMC_Bank4_PCCARD)
-    {
-      FMC_Bank4->SR4 |= FMC_IT;    
-    }
+#endif //!defined (STM32F429xx)
     /* Enable the selected FMC_Bank5_6 interrupt */
     else
     {
@@ -1113,10 +1119,15 @@ void FMC_ITConfig(uint32_t FMC_Bank, uint32_t FMC_IT, FunctionalState NewState)
   }
   else
   {
-    /* Disable the selected FMC_Bank2 interrupts */
-    if(FMC_Bank == FMC_Bank2_NAND)
+    /* Disable the selected FMC_Bank4 interrupts */
+    if(FMC_Bank == FMC_Bank4_PCCARD)
     {
-      
+      FMC_Bank4->SR4 &= (uint32_t)~FMC_IT;
+    }
+#if !defined (STM32F429xx)
+    /* Disable the selected FMC_Bank2 interrupts */
+    else if(FMC_Bank == FMC_Bank2_NAND)
+    {
       FMC_Bank2->SR2 &= (uint32_t)~FMC_IT;
     }
     /* Disable the selected FMC_Bank3 interrupts */
@@ -1124,11 +1135,7 @@ void FMC_ITConfig(uint32_t FMC_Bank, uint32_t FMC_IT, FunctionalState NewState)
     {
       FMC_Bank3->SR3 &= (uint32_t)~FMC_IT;
     }
-    /* Disable the selected FMC_Bank4 interrupts */
-    else if(FMC_Bank == FMC_Bank4_PCCARD)
-    {
-      FMC_Bank4->SR4 &= (uint32_t)~FMC_IT;    
-    }
+#endif
     /* Disable the selected FMC_Bank5_6 interrupt */
     else
     {
@@ -1166,8 +1173,13 @@ FlagStatus FMC_GetFlagStatus(uint32_t FMC_Bank, uint32_t FMC_FLAG)
   /* Check the parameters */
   assert_param(IS_FMC_GETFLAG_BANK(FMC_Bank));
   assert_param(IS_FMC_GET_FLAG(FMC_FLAG));
-  
-  if(FMC_Bank == FMC_Bank2_NAND)
+
+  if(FMC_Bank == FMC_Bank4_PCCARD)
+  {
+    tmpsr = FMC_Bank4->SR4;
+  }
+#if !defined (STM32F429xx)
+  else if(FMC_Bank == FMC_Bank2_NAND)
   {
     tmpsr = FMC_Bank2->SR2;
   }  
@@ -1175,10 +1187,7 @@ FlagStatus FMC_GetFlagStatus(uint32_t FMC_Bank, uint32_t FMC_FLAG)
   {
     tmpsr = FMC_Bank3->SR3;
   }
-  else if(FMC_Bank == FMC_Bank4_PCCARD)
-  {
-    tmpsr = FMC_Bank4->SR4;
-  }
+#endif
   else 
   {
     tmpsr = FMC_Bank5_6->SDSR;
@@ -1220,6 +1229,11 @@ void FMC_ClearFlag(uint32_t FMC_Bank, uint32_t FMC_FLAG)
   assert_param(IS_FMC_GETFLAG_BANK(FMC_Bank));
   assert_param(IS_FMC_CLEAR_FLAG(FMC_FLAG)) ;
     
+  if(FMC_Bank == FMC_Bank4_PCCARD)
+  {
+    FMC_Bank4->SR4 &= (~FMC_FLAG);
+  }
+#if !defined (STM32F429xx)
   if(FMC_Bank == FMC_Bank2_NAND)
   {
     FMC_Bank2->SR2 &= (~FMC_FLAG); 
@@ -1228,10 +1242,7 @@ void FMC_ClearFlag(uint32_t FMC_Bank, uint32_t FMC_FLAG)
   {
     FMC_Bank3->SR3 &= (~FMC_FLAG);
   }
-  else if(FMC_Bank == FMC_Bank4_PCCARD)
-  {
-    FMC_Bank4->SR4 &= (~FMC_FLAG);
-  }
+#endif
   /* FMC_Bank5_6 SDRAM*/
   else
   {
@@ -1269,7 +1280,12 @@ ITStatus FMC_GetITStatus(uint32_t FMC_Bank, uint32_t FMC_IT)
   assert_param(IS_FMC_IT_BANK(FMC_Bank));
   assert_param(IS_FMC_GET_IT(FMC_IT));
   
-  if(FMC_Bank == FMC_Bank2_NAND)
+  if(FMC_Bank == FMC_Bank4_PCCARD)
+  {
+    tmpsr = FMC_Bank4->SR4;
+  }
+#if !defined (STM32F429xx)
+  else if(FMC_Bank == FMC_Bank2_NAND)
   {
     tmpsr = FMC_Bank2->SR2;
   }  
@@ -1277,6 +1293,7 @@ ITStatus FMC_GetITStatus(uint32_t FMC_Bank, uint32_t FMC_IT)
   {
     tmpsr = FMC_Bank3->SR3;
   }
+#endif
   else if(FMC_Bank == FMC_Bank4_PCCARD)
   {
     tmpsr = FMC_Bank4->SR4;
@@ -1335,18 +1352,20 @@ void FMC_ClearITPendingBit(uint32_t FMC_Bank, uint32_t FMC_IT)
   assert_param(IS_FMC_IT_BANK(FMC_Bank));
   assert_param(IS_FMC_IT(FMC_IT));
     
+  if(FMC_Bank == FMC_Bank4_PCCARD)
+  {
+    FMC_Bank4->SR4 &= ~(FMC_IT >> 3);
+  }
+#if !defined (STM32F429xx)
   if(FMC_Bank == FMC_Bank2_NAND)
   {
     FMC_Bank2->SR2 &= ~(FMC_IT >> 3); 
   }  
   else if(FMC_Bank == FMC_Bank3_NAND)
   {
-    FMC_Bank3->SR3 &= ~(FMC_IT >> 3);
+    FMC_Bank3->SR4 &= ~(FMC_IT >> 3);
   }
-  else if(FMC_Bank == FMC_Bank4_PCCARD)
-  {
-    FMC_Bank4->SR4 &= ~(FMC_IT >> 3);
-  }
+#endif
   /* FMC_Bank5_6 SDRAM*/
   else
   {
