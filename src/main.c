@@ -28,6 +28,8 @@ uint32_t old = 0;
 uint32_t mainModeCount = 0;
 
 // Private functions ---------------------------------------------------------
+struct pbuf * outBufInit( void );
+
 
 int main( void ) {
   // Send a greeting to the trace device (skipped on Release).
@@ -62,12 +64,12 @@ int main( void ) {
 
   while (1) {
     // check if any packet received
-    if (ETH_CheckFrameReceived()) {
-      // process received ethernet packet
-      LwIP_Pkt_Handle();
-    }
-    // handle periodic timers for LwIP
-    LwIP_Periodic_Handle(myTick);
+//    if (ETH_CheckFrameReceived()) {
+//      // process received ethernet packet
+//      LwIP_Pkt_Handle();
+//    }
+//    // handle periodic timers for LwIP
+//    LwIP_Periodic_Handle(myTick);
 
     if( mainModeCount == 1 ){
       if( tims.mainMode ){

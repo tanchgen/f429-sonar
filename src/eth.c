@@ -86,7 +86,7 @@ void udpServerInit(void) {
      printf("can not create pcb");
    } 
 
-   outBufInit();
+   outp = outBufInit();
    udpDmaInit();
 }
 
@@ -167,6 +167,9 @@ void udpDmaInit( void ){
   // Адрес данных АЦП как источник данных для DMA для отправки
   DMA2_Stream3->PAR = (uint32_t)adcData;
   DMA2_Stream3->FCR = DMA_SxFCR_FTH;
+
+  NVIC_EnableIRQ( DMA2_Stream3_IRQn );
+  NVIC_SetPriority( DMA2_Stream3_IRQn, 1 );
 }
 
 struct pbuf * outBufInit( void ){
@@ -191,9 +194,12 @@ void udpTransfer( uint32_t * data, uint16_t len){
 
   outp = pbuf_alloced_custom( PBUF_TRANSPORT, OUTBUF_SIZE, PBUF_RAW,
                            &myPbuf, myMemPbuf, OUTBUF_SIZE+58 );
+  if(outp == NULL){
+    return;
+  }
   DMA2_Stream3->PAR = (uint32_t)data;
   DMA2_Stream3->M0AR = (uint32_t)outp->payload;
-  DMA2_Stream3->NDTR = len;   // len - длина буфера в 32-х битных словах
+  DMA2_Stream3->NDTR = len/2;   // len - длина буфера в 32-х битных словах
   DMA2_Stream3->CR |= DMA_SxCR_EN;
 
 }

@@ -144,9 +144,9 @@ void adcInit( void ){
   /* Enable DMA request after last transfer (Single-ADC mode) */
   ADC_DMARequestAfterLastTransferCmd(ADC1, ENABLE);
 
-  ADC1->CR1 |= ADC_CR1_EOCIE;
-  NVIC_EnableIRQ( ADC_IRQn );
-  NVIC_SetPriority( ADC_IRQn, 1 );
+//  ADC1->CR1 |= ADC_CR1_EOCIE;
+//  NVIC_EnableIRQ( ADC_IRQn );
+//  NVIC_SetPriority( ADC_IRQn, 1 );
 
 
 

@@ -155,7 +155,9 @@ void TIM3_IRQHandler( void ){
 	else 	if( (TIM3->SR & TIM_SR_UIF) == TIM_SR_UIF ){
 		TIM3->SR &= ~TIM_SR_UIF;
 		// Обработка оцифрованных данных
-		adcProcess( DMA2_Stream0 );
+		if(adcCount){
+		  adcProcess( DMA2_Stream0 );
+		}
 		// Перезапуск таймера DAC
 		dacReset();
 	}
@@ -220,13 +222,16 @@ void DMA2_Stream0_IRQHandler(void){
 	if(DMA2->LISR & DMA_LISR_TCIF0){
 		DMA2->LIFCR |= DMA_LIFCR_CTCIF0;
 		fullAdcDma = SET;
-		adcCount++;
 	}
-	if(DMA2->LISR & DMA_LISR_HTIF0){
+	else if(DMA2->LISR & DMA_LISR_HTIF0){
 		DMA2->LIFCR |= DMA_LIFCR_CHTIF0;
 		fullAdcDma = RESET;
 	}
+	else {
+	  return;
+	}
 	// TODO: Пересылка половины блока оцифрованных данных
+  adcCount++;
 	adcProcess( DMA2_Stream0 );
 }
 

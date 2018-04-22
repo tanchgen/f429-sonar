@@ -295,6 +295,8 @@ void tim2Init( void ){
 	NVIC_EnableIRQ( TIM2_IRQn );
 
   TIM2->CNT = TIM2->ARR-2;
+  // Режим вывода PWM2 CH2
+  TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 
 #if LOGIC_ANALIZ  // Для логического анализатора
 	// Вывод TIM2_CH1
@@ -305,8 +307,6 @@ void tim2Init( void ){
 
 	// Вывод TIM2_CH2
 	TIM2->CCER |= TIM_CCER_CC2E;
-	// Режим вывода PWM2 CH2
-	TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 #endif
 }
 
