@@ -62,12 +62,12 @@ void ETH_BSP_Config(void){
   /* Configure the EXTI for Ethernet link status. */
   // Eth_Link_EXTIConfig();
   
-  /* Configure Systick clock source as HCLK */
-  SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK);
-
-  /* SystTick configuration: an interrupt every 10ms */
-  RCC_GetClocksFreq(&RCC_Clocks);
-  SysTick_Config(RCC_Clocks.HCLK_Frequency / 100);  
+//  /* Configure Systick clock source as HCLK */
+//  SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK);
+//
+//  /* SystTick configuration: an interrupt every 10ms */
+//  RCC_GetClocksFreq(&RCC_Clocks);
+//  SysTick_Config(RCC_Clocks.HCLK_Frequency / 100);
 }
 
 /**
@@ -318,23 +318,6 @@ void Eth_Link_ITHandler(uint16_t PHYAddress)
   {
     EthLinkStatus = ~EthLinkStatus;
 
-#ifdef USE_LCD
-    /* Set the LCD Text Color */
-    LCD_SetTextColor(Red);
-
-    if(EthLinkStatus != 0)
-    {
-      /* Display message on the LCD */
-      LCD_DisplayStringLine(Line5, (uint8_t*)"  Network Cable is  ");
-      LCD_DisplayStringLine(Line6, (uint8_t*)"     unplugged      ");
-    }
-    else
-    {
-      /* Display message on the LCD */
-      LCD_DisplayStringLine(Line5, (uint8_t*)"  Network Cable is  ");
-      LCD_DisplayStringLine(Line6, (uint8_t*)"   now connected    ");
-    }
-#endif
   }
 }
 

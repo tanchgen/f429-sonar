@@ -18,6 +18,7 @@ tTims timsPrev;
 
 uint32_t countGen;		// Количество импульсов генератора в пачке импульса излучателя
 
+void opModeSetup( eOpMode mode );
 // ============== Функции установки Периоов и длительностей для таймеров ========
 
 void tInit( void ){
@@ -39,7 +40,7 @@ void tInit( void ){
 
 	tims.T1Main = TMAIN;			// Период первого таймера главного цикла сонара
 	timsPrev.T1Main = TMAIN;
-	tims.mainMode = MAINMODE;
+	tims.mainMode = MAINMODE_CYCLE;
 //	tims.tSw = 0;						// Стартовый импульс (задержка SW)
 //	timsPrev.tSw = 0;
 	tims.tGen = TGEN;			  	// Длительность генерации импульсов излучателя (счетчик импульсов)
@@ -53,6 +54,9 @@ void tInit( void ){
 	// За цикл ЦАП работает 2048 раз
 	tims.TDac = TDAC;					// Длительность работы DAC
 	timsPrev.TDac = TDAC;
+	tims.opMode = DDS_MODE_OP_CTRL;       // Режим работы: Передача - вкл., Прием - выкл.
+  timsPrev.opMode = DDS_MODE_OP_CTRL;
+
 	tMainSetup();
 	// Выставляем чатоту генерации
 	fGenSetup();
@@ -87,9 +91,9 @@ void mainModeSet( void ){
 		TIM3->SMCR |= TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger;
 	}
 	else {
-		// Однопульсовый режим
+		// Не однопульсовый режим
 		TIM3->CR1 &= ~TIM_CR1_OPM;
-		// Тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
+		// Выключаем тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
 		TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
 	}
 	timsPrev.mainMode = tims.mainMode;
@@ -106,7 +110,7 @@ void tGenSetup( void ){
 void tDtSetup( void ){
 	uint32_t tdt;
 
-	uint8_t kpd = (tims.kpd == 100)? 1 : 100-tims.kpd;
+	uint8_t kpd = (tims.kpd >= 100)? 1 : 100-tims.kpd;
 	tims.tDt = (10000/tims.fgen * kpd) / 2;
 	if( tims.tDt < 167 ){
 		tims.tDt = 167;
@@ -172,6 +176,8 @@ inline void fGenSetup( void ){
 	// От частоты генератора зависят другие времена: tDtGen, tGen
 	tDtSetup();
 //	tDacSetup();
+  // Переустановка таймера ЦАП
+  TIM4->PSC = ((apb1TimClock / tims.fAdc + 1) / 2) - 1;
 	timsPrev.fgen = tims.fgen;
 }
 
@@ -342,6 +348,8 @@ void tim8Init( void ){
 	TIM8->SMCR |= TIM_TS_ITR1 | TIM_SlaveMode_Trigger;
   TIM8->BDTR |= TIM_BDTR_OSSI;
 	TIM8->BDTR |= TIM_BDTR_MOE;
+	// Запрещаем автоматическое восстановление MOE
+  TIM8->BDTR &= ~TIM_BDTR_AOE;
 //  TIM8->CNT = TIM8->ARR-2;
 	TIM8->CR1 |= TIM_CR1_CEN;
 }
@@ -441,6 +449,12 @@ void firstSwProcess( void ){
 		tGenSetup();
 	}
 	else if( tims.fgen != timsPrev.fgen ){
+    if( tims.fgen < 250 ){
+      tims.fgen = 250;
+    }
+    else if( tims.fgen > 350 ){
+      tims.fgen = 350;
+    }
 		fGenSetup();
 	}
 	else if( timsPrev.kpd != tims.kpd ){
@@ -451,6 +465,15 @@ void firstSwProcess( void ){
 		mainModeSet();
 	}
 
+	if(timsPrev.fAdc != tims.fAdc ){
+	  // Переустановка таймера ЦАП
+	  TIM4->PSC = ((apb1TimClock / tims.fAdc + 1) / 2) - 1;
+	  timsPrev.fAdc = tims.fAdc;
+	}
+	// Переключение режима работы: Стоп, Передача-Прием, Прием
+	if(timsPrev.opMode != tims.opMode ){
+	  opModeSetup( tims.opMode );
+	}
 //	tims.TAdc;				// Период ADC
 //	timsPrev.TAdc;
 
@@ -465,4 +488,34 @@ void mainTimStart( void ){
 void mainTimStop( void ){
 // Режим циклического запуска главного цикла
   TIM3->CR1 &= ~TIM_CR1_CEN;
+}
+
+void opModeSetup( eOpMode mode ){
+  if( mode == DDS_MODE_STOP){
+      // Останавливаем работу ВСЕГО:
+      // Не однопульсовый режим
+      TIM3->CR1 &= ~TIM_CR1_OPM;
+      // Выключаем тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
+      TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
+      mainTimStop();
+  }
+  else {
+    if( mode == DDS_MODE_OP_CTRL){
+      // Выключаем вывод TIM8 - запрещаем вывод
+      TIM8->BDTR |= TIM_BDTR_MOE;
+    }
+    else if( mode == DDS_MODE_RX_CTRL) {
+      // Выключаем вывод TIM8 - запрещаем вывод
+      TIM8->BDTR &= ~TIM_BDTR_MOE;
+    }
+    if( timsPrev.opMode == DDS_MODE_STOP ){
+      // Восстанавливаем работу главного таймера цикла (TIM3)
+      mainModeSet();
+      if( tims.mainMode == MAINMODE_CYCLE){
+        // Запускаем главный таймер цикла (TIM3)
+        mainTimStart();
+      }
+    }
+  }
+
 }

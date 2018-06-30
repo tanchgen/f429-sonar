@@ -48,6 +48,7 @@
 #define IFNAME0 's'
 #define IFNAME1 't'
 
+uint8_t MACaddr[6];
 
 /* Ethernet Rx & Tx DMA Descriptors */
 extern ETH_DMADESCTypeDef  DMARxDscrTab[ETH_RXBUFNB], DMATxDscrTab[ETH_TXBUFNB];
@@ -64,6 +65,24 @@ extern ETH_DMADESCTypeDef  *DMATxDescToSet;
 
 /* Global pointer for last received frame infos */
 extern ETH_DMA_Rx_Frame_infos *DMA_RX_FRAME_infos;
+
+/**
+ * Setting the MAC address.
+ *
+ * @param netif the already initialized lwip network interface structure
+ *        for this ethernetif
+ */
+void Set_MAC_Address(uint8_t* macadd)
+{
+  MACaddr[0] = macadd[0];
+  MACaddr[1] = macadd[1];
+  MACaddr[2] = macadd[2];
+  MACaddr[3] = macadd[3];
+  MACaddr[4] = macadd[4];
+  MACaddr[5] = macadd[5];
+
+  ETH_MACAddressConfig(ETH_MAC_Address0, macadd);
+}
 
 /**
  * In this function, the hardware should be initialized.

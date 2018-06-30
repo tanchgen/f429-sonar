@@ -27,9 +27,12 @@
 #include <string.h>
 #include <stdio.h>
 #include "eth.h"
+
 #include "dac_adc.h"
+#include "my_time.h"
 
 #include "stm32f4x7_eth_bsp.h"
+#include "tcp_srv.h"
 #include "netconf.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,12 +40,14 @@
 #define UDP_SERVER_PORT    7   /* define the UDP local connection port */
 #define UDP_CLIENT_PORT    7   /* define the UDP remote connection port */
 
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+extern tNetCfg  localNetCfg;
+
 uint8_t * myMemPbuf;
 struct pbuf_custom myPbuf;
 struct udp_pcb *upcb;
 struct pbuf *outp;
+
+BCST_MSG bcst_msg;
 
 /* Private function prototypes -----------------------------------------------*/
 void udpRecvCallback(void *arg, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr *addr, u16_t port);
@@ -51,21 +56,22 @@ struct pbuf * outBufInit( void );
 
 /* Private functions ---------------------------------------------------------*/
 
+void ethInit( void ){
+  /* configure ethernet */
+  ETH_BSP_Config();
+  /* Initilaize the LwIP stack */
+  LwIP_Init();
+
+}
+
 /**
   * @brief  Initialize the server application.
   * @param  None
   * @retval None
   */
-void udpServerInit(void) {
+void udpInit(void){
    err_t err;
    
-   /* configure ethernet */
-   ETH_BSP_Config();
-
-   /* Initilaize the LwIP stack */
-   LwIP_Init();
-
-
    /* Create a new UDP control block  */
    upcb = udp_new();
    
@@ -204,4 +210,30 @@ void udpTransfer( uint32_t * data, uint16_t len){
 
 }
 
+int8_t bcstSend( void ){
+  int8_t rec;
+  struct udp_pcb * upcb_bcst;
+  struct pbuf * p;
+
+  bcst_msg.hw_addr = localNetCfg.net_hw_ip;
+  bcst_msg.hw_tcp_port = localNetCfg.net_hw_tcp_port;
+  bcst_msg.hw_id[0]  = 'A';
+  bcst_msg.hw_id[1]  = 'Q';
+  bcst_msg.hw_id[2]  = 'U';
+  bcst_msg.hw_id[3]  = 'A';
+
+  upcb_bcst = udp_new();
+  p = pbuf_alloc(PBUF_TRANSPORT,sizeof(BCST_MSG),PBUF_RAM);
+
+  p->payload = &bcst_msg;
+
+  rec = udp_sendto(upcb_bcst,p,IP_ADDR_BROADCAST,9999);
+  for(uint8_t i = 0; i < 4; i++ ){
+    mDelay(1000);
+    rec = udp_sendto(upcb_bcst,p,IP_ADDR_BROADCAST,9999);
+  }
+  pbuf_free(p);
+
+  return rec;
+}
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

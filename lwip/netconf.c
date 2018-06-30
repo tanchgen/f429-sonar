@@ -28,6 +28,7 @@
 #include "netif/etharp.h"
 #include "lwip/dhcp.h"
 #include "ethernetif.h"
+#include "tcp_srv.h"
 #include "main.h"
 #include "netconf.h"
 #include <stdio.h>
@@ -51,6 +52,9 @@ uint32_t TCPTimer = 0;
 uint32_t ARPTimer = 0;
 uint32_t IPaddress = 0;
 
+tNetCfg  localNetCfg;
+
+
 #ifdef USE_DHCP
 uint32_t DHCPfineTimer = 0;
 uint32_t DHCPcoarseTimer = 0;
@@ -58,6 +62,8 @@ DHCP_State_TypeDef DHCP_state = DHCP_START;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+uint8_t ReadNetCfgFromFlash( tNetCfg * netCfg);
+void netifConfig( void );
 
 /**
   * @brief  Initializes the lwIP stack
@@ -66,13 +72,6 @@ DHCP_State_TypeDef DHCP_state = DHCP_START;
   */
 void LwIP_Init(void)
 {
-  struct ip_addr ipaddr;
-  struct ip_addr netmask;
-  struct ip_addr gw;
-#ifdef USE_LCD
-  uint8_t iptab[4];
-  uint8_t iptxt[20];
-#endif
 
   /* Initializes the dynamic memory heap defined by MEM_SIZE.*/
   mem_init();
@@ -80,47 +79,37 @@ void LwIP_Init(void)
   /* Initializes the memory pools defined by MEMP_NUM_x.*/
   memp_init();
 
-#ifdef USE_DHCP
-  ipaddr.addr = 0;
-  netmask.addr = 0;
-  gw.addr = 0;
-#else
-  IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-  IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
-  IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+  if( ReadNetCfgFromFlash( &localNetCfg ) != ERR_SUCCESS ){
+    // Нет настроек сети во Флеш или они не корректны
+    localNetAddressInit( &localNetCfg );
+    Set_MAC_Address(localNetCfg.net_hw_mac);
+  }
 
-#ifdef USE_LCD  
-   iptab[0] = IP_ADDR3;
-   iptab[1] = IP_ADDR2;
-   iptab[2] = IP_ADDR1;
-   iptab[3] = IP_ADDR0;
+   netifConfig();
+  }
 
-   sprintf((char*)iptxt, "  %d.%d.%d.%d", iptab[3], iptab[2], iptab[1], iptab[0]); 
-      
-   LCD_DisplayStringLine(Line8, (uint8_t*)"  Static IP address   ");
-   LCD_DisplayStringLine(Line9, iptxt);
-#endif
-#endif
-
+void netifConfig( void ){
   /* - netif_add(struct netif *netif, struct ip_addr *ipaddr,
-            struct ip_addr *netmask, struct ip_addr *gw,
-            void *state, err_t (* init)(struct netif *netif),
-            err_t (* input)(struct pbuf *p, struct netif *netif))
-    
-   Adds your network interface to the netif_list. Allocate a struct
-  netif and pass a pointer to this structure as the first argument.
-  Give pointers to cleared ip_addr structures when using DHCP,
-  or fill them with sane numbers otherwise. The state pointer may be NULL.
+              struct ip_addr *netmask, struct ip_addr *gw,
+              void *state, err_t (* init)(struct netif *netif),
+              err_t (* input)(struct pbuf *p, struct netif *netif))
 
-  The init function pointer must point to a initialization function for
-  your ethernet netif interface. The following code illustrates it's use.*/
-  netif_add(&netif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &ethernet_input);
+     Adds your network interface to the netif_list. Allocate a struct
+    netif and pass a pointer to this structure as the first argument.
+    Give pointers to cleared ip_addr structures when using DHCP,
+    or fill them with sane numbers otherwise. The state pointer may be NULL.
 
-  /*  Registers the default network interface.*/
-  netif_set_default(&netif);
+    The init function pointer must point to a initialization function for
+    your ethernet netif interface. The following code illustrates it's use.*/
+    netif_add(&netif, (ip_addr_t *)&(localNetCfg.net_hw_ip), \
+              (ip_addr_t *)&(localNetCfg.net_hw_mask), \
+              (ip_addr_t *)&(localNetCfg.net_hw_gw), NULL, &ethernetif_init, &ethernet_input);
 
-  /*  When the netif is fully configured this function must be called.*/
-  netif_set_up(&netif);
+    /*  Registers the default network interface.*/
+    netif_set_default(&netif);
+
+    /*  When the netif is fully configured this function must be called.*/
+    netif_set_up(&netif);
 }
 
 /**
@@ -285,5 +274,52 @@ void LwIP_DHCP_Process_Handle()
   }
 }
 #endif      
+
+uint8_t ReadNetCfgFromFlash( tNetCfg * netCfg){
+  uint8_t rec = ERR_SUCCESS;
+  uint32_t *addr = (uint32_t *)netCfg;
+  uint32_t flashAddr = FLASH_NET_ADDR;
+  uint32_t flashEndaddr = flashAddr + sizeof(tNetCfg);
+
+  while(flashAddr < flashEndaddr){
+    *addr = *(uint32_t *)flashAddr;
+    if( (*addr != 0U) && (*addr != ~(0UL)) ){
+      flashAddr += 4;
+      addr++;
+    }
+    else {
+      // Параметр конфигурации сети не может быть равен 0 или 0xFFFFFFFF
+      rec = ERR_PARAM_NET_CFG;
+      break;
+    }
+  }
+
+  return rec;
+}
+
+uint8_t WriteNetCfgToFlash( tNetCfg * netcfg ){
+  uint8_t rec = ERR_SUCCESS;
+  uint32_t *addr = (uint32_t *)netcfg;
+  uint32_t flashAddr = FLASH_NET_ADDR;
+  uint32_t flashEndaddr = flashAddr + sizeof(tNetCfg);
+
+  //TODO: Запись сетевых настроек во флеш
+  FLASH_Unlock();
+
+  FLASH_EraseSector( flashAddr, VoltageRange_3 );
+  while(flashAddr < flashEndaddr){
+    if( FLASH_ProgramWord( flashAddr, *addr ) == FLASH_COMPLETE ){
+      flashAddr += 4;
+      addr++;
+    }
+    else {
+      rec = ERR_PARAM_NET_CFG;
+      break;
+    }
+  }
+
+  FLASH_Lock();
+  return rec;
+}
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

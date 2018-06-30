@@ -10,12 +10,14 @@
 #include "diag/Trace.h"
 
 #include "stm32f4xx.h"
+#include "stm32f4xx_flash.h"
 #include "netconf.h"
 #include "stm32f4x7_eth.h"
 
 #include "my_time.h"
 #include "tim.h"
 #include "dac_adc.h"
+#include "tcp_srv.h"
 #include "main.h"
 
 extern tTims tims;
@@ -28,7 +30,7 @@ uint32_t old = 0;
 uint32_t mainModeCount = 0;
 
 // Private functions ---------------------------------------------------------
-struct pbuf * outBufInit( void );
+//struct pbuf * outBufInit( void );
 
 
 int main( void ) {
@@ -50,7 +52,14 @@ int main( void ) {
   dacInit();
   adcInit();
 
-  udpServerInit();
+  ethInit();
+
+  udpInit();
+
+  serverSetup();
+
+  // Отправка широковещательного UDP-пакета: Я здесь - по адресу ..., слушаю порт ...
+  bcstSend();
 
 // Запуск Главного Таймера
   mainModeSet();
@@ -64,17 +73,17 @@ int main( void ) {
 
   while (1) {
     // check if any packet received
-//    if (ETH_CheckFrameReceived()) {
-//      // process received ethernet packet
-//      LwIP_Pkt_Handle();
-//    }
-//    // handle periodic timers for LwIP
-//    LwIP_Periodic_Handle(myTick);
+    if (ETH_CheckFrameReceived()) {
+      // process received ethernet packet
+      LwIP_Pkt_Handle();
+    }
+    // handle periodic timers for LwIP
+    LwIP_Periodic_Handle(myTick);
 
     if( mainModeCount == 1 ){
       if( tims.mainMode ){
         GPIOD->BSRRH |= GPIO_Pin_4;
-        myDelay(1);
+        mDelay(1);
         GPIOD->BSRRL |= GPIO_Pin_4;
         mainModeCount = 1300;
       }

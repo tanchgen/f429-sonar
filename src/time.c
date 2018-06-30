@@ -426,7 +426,7 @@ void debounceInit( void ) {
 }
 
 // Задержка в мс
-void myDelay( uint32_t del ){
+void mDelay( uint32_t del ){
 	uint32_t finish = myTick + del;
 	while ( myTick < finish)
 	{}

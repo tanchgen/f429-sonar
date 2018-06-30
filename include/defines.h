@@ -86,4 +86,20 @@
 #define GW_ADDR3              1
 #endif
 
+#ifndef DST_ADDR0
+#define DST_ADDR0              192
+#define DST_ADDR1              168
+#define DST_ADDR2              1
+#define DST_ADDR3              1
+#endif
+
+#ifndef HW_TCP_PORT
+#define HW_TCP_PORT            7001
+#endif
+
+#ifndef UDP_PORT
+#define UDP_POST               8000
+#endif
+
+
 #endif

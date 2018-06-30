@@ -58,14 +58,14 @@ void tim2GpioInit( void ){
 
 void tim1GpioInit( void ){
 
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-	// Выход PA7 - TIM1_CH1N, PA8 - TIM1_CH1
-	GPIOA->MODER |= (0x2 << (7 * 2)) | (0x2 << (8 * 2));
-	GPIOA->OSPEEDR |= (0x3 << (7 * 2)) | (0x3 << (8 * 2));
-//	GPIOA->BSRRL |= GPIO_Pin_7 | GPIO_Pin_8;
-	// Альтернативная функция PA7 - AF1
-	GPIOA->AFR[0] |= (0x1 << (7 * 4));		// PA7
-	GPIOA->AFR[1] |= 0x1;									// PA8
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
+	// Выход PE8 - TIM1_CH1N, PE9 - TIM1_CH1
+	GPIOE->MODER |= (0x2 << (8 * 2)) | (0x2 << (9 * 2));
+	GPIOE->OSPEEDR |= (0x3 << (8 * 2)) | (0x3 << (9 * 2));
+//	GPIOE->BSRRL |= GPIO_Pin_8 | GPIO_Pin_9;
+	// Альтернативная функция PE8, PE9 - AF1
+	GPIOE->AFR[1] |= 0x1;		              // PA8
+	GPIOE->AFR[1] |= (0x1 << 4);		      // PA9
 
 	// Break input
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;

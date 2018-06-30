@@ -101,6 +101,6 @@ void timeToStr( time_t ut, uint8_t *str );
 void timersHandler( void );
 
 void debounceInit( void );
-void myDelay( uint32_t del );
+void mDelay( uint32_t del );
 
 #endif /* UNIX_TIME_H_ */
