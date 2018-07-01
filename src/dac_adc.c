@@ -11,11 +11,13 @@
 
 #include "gpio.h"
 #include "my_time.h"
+#include "eth.h"
 #include "dac_adc.h"
 
 uint16_t dacData[DAC_SAMPLE_NUM];
 uint16_t adcData[ADC_SAMPLE_NUM];
 volatile uint8_t fullAdcDma = 0;
+volatile uint32_t dmaCount = 0;
 
 void dacInit( void ){
 	dacGpioInit();

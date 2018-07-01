@@ -30,6 +30,7 @@
 #include "eth.h"
 
 extern volatile uint8_t fullAdcDma;
+extern volatile uint32_t dmaCount;
 
 extern uint32_t mainModeCount;
 
@@ -155,8 +156,19 @@ void TIM3_IRQHandler( void ){
 	else 	if( (TIM3->SR & TIM_SR_UIF) == TIM_SR_UIF ){
 		TIM3->SR &= ~TIM_SR_UIF;
 		// Обработка оцифрованных данных
-		if(adcCount){
+		if(DMA2_Stream0->NDTR != ADC_SAMPLE_NUM){
+		  // Увеличиваем счетчик пакетов
+		  dmaCount++;
 		  adcProcess( DMA2_Stream0 );
+		  // Переустанавливаем счетчик DMA-ADC
+		  if(DMA2_Stream0->CR & DMA_SxCR_EN){
+		    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+		    DMA2_Stream0->NDTR = ADC_SAMPLE_NUM;
+		    DMA2_Stream0->CR |= DMA_SxCR_EN;
+		  }
+		  else {
+		    DMA2_Stream0->NDTR = 0;
+		  }
 		}
 		// Перезапуск таймера DAC
 		dacReset();
@@ -231,7 +243,7 @@ void DMA2_Stream0_IRQHandler(void){
 	  return;
 	}
 	// TODO: Пересылка половины блока оцифрованных данных
-  adcCount++;
+  dmaCount++;
 	adcProcess( DMA2_Stream0 );
 }
 

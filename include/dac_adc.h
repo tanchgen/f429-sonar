@@ -20,5 +20,6 @@ void dacDataInit( uint16_t *pvaru, uint16_t smplNum );
 void adcInit( void );
 void dacReset( void );
 void adcProcess( DMA_Stream_TypeDef * DMA_Streamx );
+void adcTransfer( uint16_t * data, uint16_t len);
 
 #endif /* DAC_H_ */

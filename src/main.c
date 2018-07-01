@@ -18,6 +18,7 @@
 #include "tim.h"
 #include "dac_adc.h"
 #include "tcp_srv.h"
+#include "eth.h"
 #include "main.h"
 
 extern tTims tims;
@@ -31,15 +32,15 @@ uint32_t mainModeCount = 0;
 
 // Private functions ---------------------------------------------------------
 //struct pbuf * outBufInit( void );
-
+void mco2EthConfig( void );
 
 int main( void ) {
-  // Send a greeting to the trace device (skipped on Release).
-  trace_puts("Hello ARM World!");
   SetSYSCLK_180();
+//  mco2EthConfig();
 
   SysTick_Config (SystemCoreClock / TIMER_FREQUENCY_HZ);
-  trace_printf("System clock: %u Hz\n", SystemCoreClock);
+  /* SysTick_IRQn interrupt configuration */
+  NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
 
   tInit();
   tim8Init();
@@ -53,23 +54,24 @@ int main( void ) {
   adcInit();
 
   ethInit();
-
   udpInit();
-
   serverSetup();
-
   // Отправка широковещательного UDP-пакета: Я здесь - по адресу ..., слушаю порт ...
   bcstSend();
 
 // Запуск Главного Таймера
-  mainModeSet();
-  // Для тестирования работы Главного Цикла
+//    myDelay(1500);
+    timPrestart();
+    mainModeSet();
+
+ // Для тестирования работы Главного Цикла
   if( tims.mainMode ){
     mainModeCount = 1300;
   }
   else{
     mainModeCount = 2000;
   }
+
 
   while (1) {
     // check if any packet received
@@ -97,4 +99,16 @@ int main( void ) {
   }
 }
 
+void mco2EthConfig( void ){
+  // MCO2 source - PLLI2S
+  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2PRE);// | RCC_MCO2Div_4;
+  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2) | RCC_MCO2Source_PLLI2SCLK;
+//  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2) | RCC_MCO2Source_HSE;
+
+  // Update SystemCoreClock global variable value
+  SystemCoreClock = 180000000;
+  RCC_GetClocksFreq( &RCC_Clocks );
+  apb1TimClock = (RCC->CFGR & RCC_CFGR_PPRE1)? RCC_Clocks.PCLK1_Frequency * 2: RCC_Clocks.PCLK1_Frequency;
+  apb2TimClock = (RCC->CFGR & RCC_CFGR_PPRE2)? RCC_Clocks.PCLK2_Frequency * 2: RCC_Clocks.PCLK2_Frequency;
+}
 // ----------------------------------------------------------------------------

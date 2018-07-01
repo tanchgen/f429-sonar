@@ -80,6 +80,21 @@ void tMainSetup( void ){
 	timsPrev.T1Main =	tims.T1Main;
 
 }
+void timPrestart( void ){
+
+  // Перезапуск таймера сонара
+  TIM4->EGR |= TIM_EGR_UG;
+  TIM5->EGR |= TIM_EGR_UG;
+  // Перезапуск таймера сонара
+  TIM1->EGR |= TIM_EGR_UG;
+  // НЕ-Однопульсовый режим
+  TIM3->CR1 &= ~TIM_CR1_OPM;
+  // Тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
+  TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
+  TIM3->CR1 |= TIM_CR1_CEN;
+
+}
+
 
 void mainModeSet( void ){
 
@@ -91,11 +106,12 @@ void mainModeSet( void ){
 		TIM3->SMCR |= TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger;
 	}
 	else {
-		// Не однопульсовый режим
+		// НЕ-Однопульсовый режим
 		TIM3->CR1 &= ~TIM_CR1_OPM;
 		// Выключаем тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
 		TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
 	}
+	TIM3->EGR |= TIM_EGR_UG;
 	timsPrev.mainMode = tims.mainMode;
 }
 
@@ -301,8 +317,6 @@ void tim2Init( void ){
 	NVIC_EnableIRQ( TIM2_IRQn );
 
   TIM2->CNT = TIM2->ARR-2;
-  // Режим вывода PWM2 CH2
-  TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 
 #if LOGIC_ANALIZ  // Для логического анализатора
 	// Вывод TIM2_CH1
@@ -313,6 +327,8 @@ void tim2Init( void ){
 
 	// Вывод TIM2_CH2
 	TIM2->CCER |= TIM_CCER_CC2E;
+	// Режим вывода PWM2 CH2
+	TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 #endif
 }
 
@@ -346,10 +362,8 @@ void tim8Init( void ){
 	TIM8->CR1 |= TIM_CR1_OPM;
 	// Тригерный режим: TriggerMode, Запуск от внутреннего источника ITR1 (TIM2_TRGO) растущий фронт
 	TIM8->SMCR |= TIM_TS_ITR1 | TIM_SlaveMode_Trigger;
-  TIM8->BDTR |= TIM_BDTR_OSSI;
-	TIM8->BDTR |= TIM_BDTR_MOE;
-	// Запрещаем автоматическое восстановление MOE
-  TIM8->BDTR &= ~TIM_BDTR_AOE;
+  // Запрещаем автоматическое восстановление MOE
+  TIM8->BDTR = (TIM8->BDTR & ~TIM_BDTR_AOE) | TIM_BDTR_OSSI | TIM_BDTR_MOE;
 //  TIM8->CNT = TIM8->ARR-2;
 	TIM8->CR1 |= TIM_CR1_CEN;
 }
@@ -429,9 +443,7 @@ void firstSwProcess( void ){
 		timsPrev.TDac = tims.TDac;
 	}
 	else if (timsPrev.TDac != tims.TDac ){
-		// За цикл ЦАП работает 2048 раз
 		tDacSetup();
-//		tAdcSetup();
 		timsPrev.TDac = tims.TDac;
 	}
 	if( timsPrev.fgen != tims.fgen ){
