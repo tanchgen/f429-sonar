@@ -118,7 +118,6 @@
   *
   ******************************************************************************  
   */
-#if defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hash.h"
@@ -723,6 +722,5 @@ void HASH_ClearITPendingBit(uint32_t HASH_IT)
 /**
   * @}
   */ 
-#endif //defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

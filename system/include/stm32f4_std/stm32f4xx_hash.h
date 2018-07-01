@@ -30,9 +30,6 @@
 #ifndef __STM32F4xx_HASH_H
 #define __STM32F4xx_HASH_H
 
-#if defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
-
-
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -256,6 +253,5 @@ ErrorStatus HMAC_MD5(uint8_t *Key, uint32_t Keylen,
 /**
   * @}
   */ 
-#endif // defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

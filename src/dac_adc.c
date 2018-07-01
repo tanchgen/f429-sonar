@@ -11,13 +11,11 @@
 
 #include "gpio.h"
 #include "my_time.h"
-#include "eth.h"
 #include "dac_adc.h"
 
 uint16_t dacData[DAC_SAMPLE_NUM];
 uint16_t adcData[ADC_SAMPLE_NUM];
 volatile uint8_t fullAdcDma = 0;
-volatile uint32_t dmaCount = 0;
 
 void dacInit( void ){
 	dacGpioInit();
@@ -184,7 +182,9 @@ void dacReset( void ){
 }
 
 void adcProcess( DMA_Stream_TypeDef * DMA_Streamx ){
-	__aligned(4) uint16_t * padc = adcData;
+//	__aligned(4) uint16_t * padc = adcData;
+	__attribute__((__aligned__(4))) uint16_t * padc = adcData;
+	(void)padc;
 	uint16_t len;
 
 	len = ADC_SAMPLE_NUM - ((DMA_Streamx->NDTR == ADC_SAMPLE_NUM)? 0: DMA_Streamx->NDTR);
@@ -195,7 +195,7 @@ void adcProcess( DMA_Stream_TypeDef * DMA_Streamx ){
 	}
 
 	// Запускаем DMA в PBUF для UDP
-	udpTransfer( (uint32_t*)padc, len );
+//	udpTransfer( (uint32_t*)padc, len );
 
 	// В случае выборки по таймеру окончания Главного цикла будем выбирать из следующей половины
 	fullAdcDma = !fullAdcDma;

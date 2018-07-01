@@ -159,7 +159,6 @@
   *
   ******************************************************************************  
   */
-#if defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_cryp.h"
@@ -931,6 +930,5 @@ FlagStatus CRYP_GetFlagStatus(uint8_t CRYP_FLAG)
 /**
   * @}
   */ 
-#endif //defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

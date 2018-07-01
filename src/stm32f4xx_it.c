@@ -27,10 +27,9 @@
 #include "tim.h"
 #include "dac_adc.h"
 #include "stm32f4xx_it.h"
-#include "eth.h"
+//#include "eth.h"
 
 extern volatile uint8_t fullAdcDma;
-extern volatile uint32_t dmaCount;
 
 extern uint32_t mainModeCount;
 
@@ -156,19 +155,8 @@ void TIM3_IRQHandler( void ){
 	else 	if( (TIM3->SR & TIM_SR_UIF) == TIM_SR_UIF ){
 		TIM3->SR &= ~TIM_SR_UIF;
 		// Обработка оцифрованных данных
-		if(DMA2_Stream0->NDTR != ADC_SAMPLE_NUM){
-		  // Увеличиваем счетчик пакетов
-		  dmaCount++;
+		if(adcCount){
 		  adcProcess( DMA2_Stream0 );
-		  // Переустанавливаем счетчик DMA-ADC
-		  if(DMA2_Stream0->CR & DMA_SxCR_EN){
-		    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
-		    DMA2_Stream0->NDTR = ADC_SAMPLE_NUM;
-		    DMA2_Stream0->CR |= DMA_SxCR_EN;
-		  }
-		  else {
-		    DMA2_Stream0->NDTR = 0;
-		  }
 		}
 		// Перезапуск таймера DAC
 		dacReset();
@@ -243,7 +231,7 @@ void DMA2_Stream0_IRQHandler(void){
 	  return;
 	}
 	// TODO: Пересылка половины блока оцифрованных данных
-  dmaCount++;
+  adcCount++;
 	adcProcess( DMA2_Stream0 );
 }
 
@@ -254,8 +242,8 @@ void DMA2_Stream3_IRQHandler(void){
     DMA2->LIFCR |= DMA_LIFCR_CTCIF3;
   }
   // TODO: Пересылка половины блока оцифрованных данных в сеть
-  udp_send(upcb, outp);
-  pbuf_free(outp);
+ // udp_send(upcb, outp);
+ // pbuf_free(outp);
 }
 
 void ADC_IRQHandler( void ){

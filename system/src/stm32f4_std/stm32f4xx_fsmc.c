@@ -30,11 +30,8 @@
   *
   ******************************************************************************
   */
-#if defined (STM32F405xx) || defined (STM32F415xx) || defined (STM32F407xx) || defined (STM32F417xx) || \
-    defined (STM32F401xC) || defined (STM32F401xE) || defined (STM32F410Tx) || defined (STM32F410Cx) || \
-    defined (STM32F410Rx) || defined (STM32F411xE) || defined (STM32F412Cx) || defined (STM32F412Rx) || \
-    defined (STM32F412Vx) || defined (STM32F412Zx)
 
+#if defined (STM32F40_41xxx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_fsmc.h"
 #include "stm32f4xx_rcc.h"
@@ -989,5 +986,5 @@ void FSMC_ClearITPendingBit(uint32_t FSMC_Bank, uint32_t FSMC_IT)
 /**
   * @}
   */
-#endif
+#endif // STM32F40_41xxx
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

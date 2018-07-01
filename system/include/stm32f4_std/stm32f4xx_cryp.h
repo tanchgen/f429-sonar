@@ -30,9 +30,6 @@
 #ifndef __STM32F4xx_CRYP_H
 #define __STM32F4xx_CRYP_H
 
-#if defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
-
-
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -373,9 +370,6 @@ ErrorStatus CRYP_DES_CBC(uint8_t Mode,
 #ifdef __cplusplus
 }
 #endif
-
-#endif //defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
-
 
 #endif /*__STM32F4xx_CRYP_H */
 

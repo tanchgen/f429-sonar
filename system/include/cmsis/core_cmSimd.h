@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_cmSimd.h
  * @brief    CMSIS Cortex-M SIMD Header File
- * @version  V4.30
- * @date     20. October 2015
+ * @version  V4.20
+ * @date     02. July 2015
  ******************************************************************************/
 /* Copyright (c) 2009 - 2015 ARM LIMITED
 
@@ -34,7 +34,7 @@
 
 #if   defined ( __ICCARM__ )
  #pragma system_include         /* treat file as system include file for MISRA check */
-#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#elif (__ARMCC_VERSION >= 6010050)
   #pragma clang system_header   /* treat file as system include file */
 #endif
 
@@ -46,42 +46,40 @@
 #endif
 
 
+/*******************************************************************************
+ *                Hardware Abstraction Layer
+ ******************************************************************************/
+
+
 /* ###################  Compiler specific Intrinsics  ########################### */
 /** \defgroup CMSIS_SIMD_intrinsics CMSIS SIMD Intrinsics
   Access to dedicated SIMD instructions
   @{
 */
 
-/*------------------ RealView Compiler -----------------*/
-#if   defined ( __CC_ARM )
-  #include "cmsis_armcc.h"
+#if   defined ( __CC_ARM )         /*------------------ RealView Compiler -----------------*/
+  #include <cmsis_armcc.h>
 
-/*------------------ ARM Compiler V6 -------------------*/
-#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-  #include "cmsis_armcc_V6.h"
+#elif (__ARMCC_VERSION >= 6010050) /*------------------ ARM Compiler V6 -------------------*/
+  #include <cmsis_armcc_V6.h>
 
-/*------------------ GNU Compiler ----------------------*/
-#elif defined ( __GNUC__ )
-  #include "cmsis_gcc.h"
+#elif defined ( __GNUC__ )         /*------------------ GNU Compiler ----------------------*/
+  #include <cmsis_gcc.h>
 
-/*------------------ ICC Compiler ----------------------*/
-#elif defined ( __ICCARM__ )
+#elif defined ( __ICCARM__ )       /*------------------ ICC Compiler ----------------------*/
   #include <cmsis_iar.h>
 
-/*------------------ TI CCS Compiler -------------------*/
-#elif defined ( __TMS470__ )
+#elif defined ( __TMS470__ )       /*------------------ TI CCS Compiler -------------------*/
   #include <cmsis_ccs.h>
 
-/*------------------ TASKING Compiler ------------------*/
-#elif defined ( __TASKING__ )
-  /*
-   * The CMSIS functions have been implemented as intrinsics in the compiler.
-   * Please use "carm -?i" to get an up to date list of all intrinsics,
-   * Including the CMSIS ones.
+#elif defined ( __TASKING__ )      /*------------------ TASKING Compiler ------------------*/
+    /*
+     * The CMSIS functions have been implemented as intrinsics in the compiler.
+     * Please use "carm -?i" to get an up to date list of all intrinsics,
+     * Including the CMSIS ones.
    */
 
-/*------------------ COSMIC Compiler -------------------*/
-#elif defined ( __CSMC__ )
+#elif defined ( __CSMC__ )         /*------------------ COSMIC Compiler -------------------*/
   #include <cmsis_csm.h>
 
 #endif

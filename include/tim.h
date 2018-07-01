@@ -8,7 +8,7 @@
 #ifndef TIM_H_
 #define TIM_H_
 
-#include "tcp_srv.h"
+//#include "tcp_srv.h"
 
 
 enum {
@@ -24,7 +24,13 @@ enum {
 #define TDAC				(1000)	// 500мс - Минимальный период главного цикла, 2мс - макс. SW-обработка)
 
 #define TIM5_FREQ		(9e6)
-// структура временных интервалов таймеров
+// структура временнЫх интервалов таймеров
+
+typedef enum {
+  DDS_MODE_STOP = 0,
+  DDS_MODE_OP_CTRL = 1,
+  DDS_MODE_RX_CTRL = 2,
+} eOpMode;
 
 typedef struct {
 	uint32_t mainMode;		// Режим работы: 0 - Работа циклическая, 1- разовый цикл от внешнего запуска
@@ -67,9 +73,7 @@ void tim4Init( void );
 
 void mainTimStart( void );
 void mainTimStop( void );
-void timPrestart( void );
 
 void firstSwProcess( void );
-void opModeSetup( eOpMode mode );
 
 #endif /* TIM_H_ */

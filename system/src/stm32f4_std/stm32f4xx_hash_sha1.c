@@ -42,7 +42,6 @@
   *
   ******************************************************************************
   */
-#if defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hash.h"
@@ -320,6 +319,5 @@ ErrorStatus HMAC_SHA1(uint8_t *Key, uint32_t Keylen, uint8_t *Input,
 /**
   * @}
   */ 
-#endif //defined (STM32F415xx) || defined (STM32F417xx) || defined (STM32F439xx)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
