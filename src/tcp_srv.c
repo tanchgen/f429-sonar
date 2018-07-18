@@ -279,7 +279,9 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
           dds_mode_stored.mode = dds_cfg_stored.mode;
           tims.opMode = dds_mode_stored.mode;
           tims.T1Main = dds_cfg_stored.period;
-          tims.fgen = dds_cfg_stored.dds.impulse.fm.freq_start;
+          tims.fgen = dds_cfg_stored.dds.impulse.fm.freq_start / 1000;
+          // tau_d(Tизлучения) - мкс, fgen(Fизлучения) - кГц, tGen(Nимпульсов) - количество импульсов излучателя
+          tims.tGen = (tims.fgen * dds_cfg_stored.dds.impulse.fm.tau_d) / 1000;
         }
       }
       break;

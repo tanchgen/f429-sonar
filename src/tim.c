@@ -80,6 +80,7 @@ void tMainSetup( void ){
 	timsPrev.T1Main =	tims.T1Main;
 
 }
+
 void timPrestart( void ){
 
   // Перезапуск таймера сонара
@@ -192,7 +193,7 @@ inline void fGenSetup( void ){
 	// От частоты генератора зависят другие времена: tDtGen, tGen
 	tDtSetup();
 //	tDacSetup();
-  // Переустановка таймера ЦАП
+  // Переустановка таймера АЦП
   TIM4->PSC = ((apb1TimClock / tims.fAdc + 1) / 2) - 1;
 	timsPrev.fgen = tims.fgen;
 }
@@ -440,16 +441,12 @@ void firstSwProcess( void ){
 		}
 
 		tMainSetup();
-		timsPrev.TDac = tims.TDac;
 	}
-	else if (timsPrev.TDac != tims.TDac ){
+	if (timsPrev.TDac != tims.TDac ){
 		tDacSetup();
 		timsPrev.TDac = tims.TDac;
 	}
-	if( timsPrev.fgen != tims.fgen ){
-		fGenSetup();
-	}
-	else if( tims.tGen != timsPrev.tGen ){
+	if( tims.tGen != timsPrev.tGen ){
 		// Ограничения: от 500 до 2000 мс
 		if( tims.tGen < 400 ){
 			tims.tGen = 400;
@@ -457,22 +454,20 @@ void firstSwProcess( void ){
 		else if( tims.tGen > 5000 ){
 			tims.tGen = 5000;
 		}
-
+		if( tims.fgen != timsPrev.fgen ){
+		  // Проверка нового значения fgen на корректность
+      if( tims.fgen < 250 ){
+        tims.fgen = 250;
+      }
+      else if( tims.fgen > 350 ){
+        tims.fgen = 350;
+      }
+		}
 		tGenSetup();
 	}
-	else if( tims.fgen != timsPrev.fgen ){
-    if( tims.fgen < 250 ){
-      tims.fgen = 250;
-    }
-    else if( tims.fgen > 350 ){
-      tims.fgen = 350;
-    }
-		fGenSetup();
-	}
-	else if( timsPrev.kpd != tims.kpd ){
+	if( timsPrev.kpd != tims.kpd ){
 		tDtSetup();
 	}
-
 	if( timsPrev.mainMode != tims.mainMode ){
 		mainModeSet();
 	}
@@ -486,8 +481,6 @@ void firstSwProcess( void ){
 	if(timsPrev.opMode != tims.opMode ){
 	  opModeSetup( tims.opMode );
 	}
-//	tims.TAdc;				// Период ADC
-//	timsPrev.TAdc;
 
 }
 
