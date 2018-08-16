@@ -98,7 +98,7 @@
 #endif
 
 #ifndef UDP_PORT
-#define UDP_POST               8000
+#define UDP_PORT               8000
 #endif
 
 

@@ -179,7 +179,7 @@
 #define PLLCFGR_PPLR_MASK         ((uint32_t)0x70000000)
 #define PLLCFGR_PPLN_MASK         ((uint32_t)0x00007FC0)
 
-#define SPI_CR2_FRF               ((uint16_t)0x0010)
+//#define SPI_CR2_FRF               ((uint16_t)0x0010)
 #define SPI_SR_TIFRFE             ((uint16_t)0x0100)
 
 /* Private macro -------------------------------------------------------------*/

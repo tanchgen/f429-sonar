@@ -156,8 +156,8 @@ void localNetAddressInit(tNetCfg * pNetCfg) {
 //  IP4_ADDR(&tmp_addr, 192, 168, 10, 1);
   pNetCfg->net_dst_ip = tmp_addr.addr;
 
-  pNetCfg->net_hw_tcp_port = 7001;
-  pNetCfg->net_dst_udp_port = 8000;
+  pNetCfg->net_hw_tcp_port = HW_TCP_PORT;
+  pNetCfg->net_dst_udp_port = UDP_PORT;
 
   memcpy(pNetCfg->net_hw_mac,&mac[0],sizeof(mac)*sizeof(mac[0]));
 }

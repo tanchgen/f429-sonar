@@ -37,8 +37,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define UDP_SERVER_PORT    7   /* define the UDP local connection port */
-#define UDP_CLIENT_PORT    7   /* define the UDP remote connection port */
+#define UDP_SERVER_PORT    7      /* define the UDP local connection port */
+#define UDP_CLIENT_PORT    8000   /* define the UDP remote connection port */
 
 extern tNetCfg  localNetCfg;
 
@@ -75,11 +75,24 @@ void udpInit(void){
    /* Create a new UDP control block  */
    upcb = udp_new();
    
-   if (upcb) {
-     /* Bind the upcb to the UDP_PORT port */
-     /* Using IP_ADDR_ANY allow the upcb to be used by any local interface */
-      err = udp_bind(upcb, IP_ADDR_ANY, UDP_SERVER_PORT);
-      
+   if (upcb == NULL ) {
+//     /* Bind the upcb to the UDP_PORT port */
+//     /* Using IP_ADDR_ANY allow the upcb to be used by any local interface */
+//      err = udp_bind(upcb, IP_ADDR_ANY, UDP_SERVER_PORT);
+//
+//      if(err == ERR_OK) {
+//        /* Set a receive callback for the upcb */
+//        udp_recv(upcb, udpRecvCallback, NULL);
+//      }
+//      else {
+//        printf("can not bind pcb");
+//      }
+//   }
+     printf("can not create pcb");
+   }
+   else {
+      err = udp_bind(upcb, (ip_addr_t *)&(localNetCfg.net_hw_ip), UDP_SERVER_PORT);
+
       if(err == ERR_OK) {
         /* Set a receive callback for the upcb */
         udp_recv(upcb, udpRecvCallback, NULL);
@@ -87,13 +100,10 @@ void udpInit(void){
       else {
         printf("can not bind pcb");
       }
+     udp_connect( upcb, (ip_addr_t *)&(localNetCfg.net_dst_ip), localNetCfg.net_dst_udp_port );
+     outp = outBufInit();
+     udpDmaInit();
    }
-   else {
-     printf("can not create pcb");
-   } 
-
-   outp = outBufInit();
-   udpDmaInit();
 }
 
 /**
@@ -169,7 +179,7 @@ void udpDmaInit( void ){
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
   DMA2_Stream3->CR = 0;
   DMA2_Stream3->CR |= DMA_SxCR_MBURST_0 | DMA_SxCR_PBURST_0 | DMA_SxCR_MSIZE_1 | DMA_SxCR_PSIZE_1;
-  DMA2_Stream3->CR |= DMA_SxCR_DIR_1 | DMA_SxCR_PINC | DMA_SxCR_MINC | DMA_SxCR_TCIE;
+  DMA2_Stream3->CR |= DMA_SxCR_DIR_1 | DMA_SxCR_PINC | DMA_SxCR_MINC | DMA_SxCR_TCIE | DMA_SxCR_TEIE;
   // Адрес данных АЦП как источник данных для DMA для отправки
   DMA2_Stream3->PAR = (uint32_t)adcData;
   DMA2_Stream3->FCR = DMA_SxFCR_FTH;

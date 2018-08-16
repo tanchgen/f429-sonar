@@ -252,10 +252,13 @@ void DMA2_Stream3_IRQHandler(void){
   if(DMA2->LISR & DMA_LISR_TCIF3){
     // Данные из АЦП переправлены в PBUF UDP
     DMA2->LIFCR |= DMA_LIFCR_CTCIF3;
+    udp_send(upcb, outp);
+    pbuf_free(outp);
   }
-  // TODO: Пересылка половины блока оцифрованных данных в сеть
-  udp_send(upcb, outp);
-  pbuf_free(outp);
+  if(DMA2->LISR & DMA_LISR_TEIF3){
+    // Данные из АЦП переправлены в PBUF UDP
+    DMA2->LIFCR |= DMA_LIFCR_CTEIF3;
+  }
 }
 
 void ADC_IRQHandler( void ){
