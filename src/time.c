@@ -65,34 +65,17 @@ void SetSYSCLK_180(void) {
   while( (RCC->CR & RCC_CR_PLLRDY) != 0)
   {}
 
-  RCC->CR &= ~RCC_CR_PLLI2SON;
-   /* Wait till PLL is ready */
-  while( (RCC->CR & RCC_CR_PLLI2SRDY) != 0)
-  {}
   /* Configure PLL clock to have:
   PLL_VCO = (HSE_VALUE / PLL_M) * PLL_N = 360 MHz
   SYSCLK = PLL_VCO / PLL_P = 180 MHz
   USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ = ~51 MHz (USB is not used)
   */
-  //PLLM = 16, PLLN = 360, PLLP = 2, PLLQ = 7
+  //PLLM = 50, PLLN = 360, PLLP = 2, PLLQ = 7
   RCC->PLLCFGR = 50 | (360L << 6) | (((2 >> 1) -1) << 16) | 7 << 24 | (RCC_PLLSource_HSE);
-
-  /* Configure PLL clock to have:
-  PLLI2S_VCO = (HSI_VALUE / PLL_M) * PLLI2S_N = 200 MHz
-  PLLI2S_CLK = PLLI2S_VCO / PLL_R = 50 MHz
-  USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ = ~51 MHz (USB is not used)
-  */
-  //PLL_M = 16, PLLI2S_R = 4, PLLI2S_N = 200
-  RCC->PLLI2SCFGR = (200L << 6) | (4 << 28) | (4 << 24);
 
   RCC->CR |= RCC_CR_PLLON;
    /* Wait till PLL is ready */
   while( (RCC->CR & RCC_CR_PLLRDY) == 0)
-  {}
-
-  RCC->CR |= RCC_CR_PLLI2SON;
-   /* Wait till PLL is ready */
-  while( (RCC->CR & RCC_CR_PLLI2SRDY) == 0)
   {}
 
   // HCLK = SYSCLK/1
@@ -106,10 +89,8 @@ void SetSYSCLK_180(void) {
   while( (RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL )
   {}
 
-  // MCO2 source - PLLI2S
-  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2PRE);// | RCC_MCO2Div_4;
-  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2) | RCC_MCO2Source_PLLI2SCLK;
-//  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO2) | RCC_MCO2Source_HSE;
+  // MCO2 source - HSE
+  RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_MCO2PRE | RCC_CFGR_MCO2)) | RCC_MCO2Source_HSE;
 
   /* SysTick_IRQn interrupt configuration */
   NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));

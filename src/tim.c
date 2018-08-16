@@ -447,7 +447,7 @@ void firstSwProcess( void ){
 		timsPrev.TDac = tims.TDac;
 	}
 	if( tims.tGen != timsPrev.tGen ){
-		// Ограничения: от 500 до 2000 мс
+		// Ограничения: от 400 до 5000 импульсов
 		if( tims.tGen < 400 ){
 			tims.tGen = 400;
 		}

@@ -30,7 +30,7 @@
 #include "eth.h"
 
 extern volatile uint8_t fullAdcDma;
-extern volatile uint32_t dmaCount;
+volatile uint32_t dmaCount;
 
 extern uint32_t mainModeCount;
 

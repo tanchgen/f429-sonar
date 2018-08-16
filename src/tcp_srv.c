@@ -17,20 +17,20 @@
 #include "tcp_srv.h"
 
 extern tTims tims;
-extern uint16_t dacData[];
+//extern uint16_t dacData[];
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static char szArg[] = "void arg";
 static const u16 s_wSoftVersion = 0x8103;
 
-static DDS_CFG dds_cfg_stored;
-static DDS_MODE dds_mode_stored;
-static TXR_PWR_CFG dds_pwrCfg_stored;
-static GAIN_CFG dds_gain_stored;
-static u32 sampling_freq_stored;
+// static DDS_CFG dds_cfg_stored;
+// static DDS_MODE dds_mode_stored;
+//TXR_PWR_CFG dds_pwrCfg_stored;
+//static GAIN_CFG dds_gain_stored;
+//uint32_t sampling_freq_stored;
 
-u16 GetVaruValueFromGainValue(u16 gain_value);
+//u16 GetVaruValueFromGainValue(u16 gain_value);
 uint8_t WriteNetCfgToFlash( tNetCfg * netcfg );
 uint8_t ReadNetCfgFromFlash( tNetCfg * netCfg);
 //uint8_t WriteNetCfgToFlash( tNetCfg * netcfg );
@@ -105,19 +105,11 @@ static void Server(struct tcp_pcb *pcb, uint16_t byteNum );
 //}
 
 static u8 GetGainCfg(u8 channel, GAIN_CFG* pGain) {
-  if( channel > MAX_CHANNELS_NUM )
+  if( channel > MAX_CHANNELS_NUM ){
     return ERR_HW_CHANNEL_NUM;
-  memcpy( &pGain, &dds_gain_stored, sizeof(GAIN_CFG) );
-  return ERR_SUCCESS;
-}
-
-static u8 SaveGainCfg(u8 channel, GAIN_CFG* pGain, uint16_t bn) {
-  uint16_t sz;
-
-  sz = (sizeof(DDS_CFG) > bn)? bn: sizeof(DDS_CFG);
-  if( channel > MAX_CHANNELS_NUM )
-    return ERR_HW_CHANNEL_NUM;
-  memcpy( &dds_gain_stored, &pGain, sz );
+  }
+  pGain->channel = channel;
+  pGain->level = varuLevel;
   return ERR_SUCCESS;
 }
 
@@ -132,7 +124,7 @@ err_t ServerSetup(void)
   pcb = tcp_listen(pcb);
   pcb->so_options |= SOF_KEEPALIVE;
   tcp_accept(pcb,OnAccept);
-  memset( &dds_cfg_stored, 0, sizeof(DDS_CFG) );
+//  memset( &dds_cfg_stored, 0, sizeof(DDS_CFG) );
   return ERR_OK;
 }
 
@@ -172,7 +164,6 @@ err_t serverSetup(void) {
   pcb = tcp_listen(pcb);
   pcb->so_options |= SOF_KEEPALIVE;
   tcp_accept(pcb,OnAccept);
-  memset(&dds_cfg_stored,0,sizeof(DDS_CFG));
   return ERR_OK;
 }
 
@@ -227,10 +218,11 @@ u8 needToReset = 0;
 static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
   CFG_DATA* pcd = (CFG_DATA*)buf;
   uint16_t to_send = sizeof(pcd->head);
+  byteNum -= sizeof(pcd->head);
+  pcd->head.err = ERR_SUCCESS;
   switch(pcd->head.cmd){
     case CMD_EXT_SYNC_INPUT:
       // Управление режимом внешней синхронизации
-      pcd->head.err = ERR_SUCCESS;
       if(pcd->head.dir == CMD_DIR_READ) {
         // Возвращаем наверх текущий режим синхронизации
         pcd->data.byte = (uint8_t)tims.mainMode;
@@ -241,7 +233,6 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
           pcd->head.err = ERR_HW_MODE;
         }
         else {
-          pcd->head.err = ERR_SUCCESS;
           // tims.mainMode = 1 - внешняя синхронизация
           // tims.mainMode = 0 - внутренняя синхронизация
           tims.mainMode = pcd->data.byte;
@@ -252,11 +243,15 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
       // Параметры излучения для заданного канала (в случае альтиметра канал единственный)
       if(pcd->head.dir == CMD_DIR_READ) {
         // Возвращаем наверх текущие параметры
-        if( pcd->data.byte > MAX_CHANNELS_NUM ){
+        if( pcd->data.byte >= MAX_CHANNELS_NUM ){
           pcd->head.err = ERR_HW_CHANNEL_NUM;
         }
         else{
-          pcd->data.dds_cfg = dds_cfg_stored;
+          memset(&(pcd->data.dds_cfg), 0, sizeof(DDS_CFG));
+          pcd->data.dds_cfg.mode = tims.opMode;
+          pcd->data.dds_cfg.period = tims.T1Main;
+          pcd->data.dds_cfg.dds.impulse.fm.freq_start = tims.fgen;
+          pcd->data.dds_cfg.dds.impulse.fm.tau_d = tims.tGen;
           to_send += sizeof(DDS_CFG);
         }
       }
@@ -273,15 +268,25 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
           // Период меньше минимального или больше максимального
           pcd->head.err = ERR_HW_PERIOD;
         }
+        if( (pcd->data.dds_cfg.dds.impulse.fm.freq_start < 250) ||
+            (pcd->data.dds_cfg.dds.impulse.fm.freq_start > 350) ){
+          // Частота генерации излучателя меньше минимального или больше максимального
+          pcd->head.err = ERR_HW_PERIOD;
+        }
+        // Ограничения: от 400 до 5000 импульсов
+        if( (pcd->data.dds_cfg.dds.impulse.fm.tau_d < 400) ||
+            (pcd->data.dds_cfg.dds.impulse.fm.tau_d > 5000) ){
+          // Длительность излучения излучателя меньше минимального или больше максимального
+          pcd->head.err = ERR_HW_PERIOD;
+        }
         else {
-          pcd->head.err = ERR_SUCCESS;
-          dds_cfg_stored = pcd->data.dds_cfg;
-          dds_mode_stored.mode = dds_cfg_stored.mode;
-          tims.opMode = dds_mode_stored.mode;
-          tims.T1Main = dds_cfg_stored.period;
-          tims.fgen = dds_cfg_stored.dds.impulse.fm.freq_start / 1000;
-          // tau_d(Tизлучения) - мкс, fgen(Fизлучения) - кГц, tGen(Nимпульсов) - количество импульсов излучателя
-          tims.tGen = (tims.fgen * dds_cfg_stored.dds.impulse.fm.tau_d) / 1000;
+//          dds_cfg_stored = pcd->data.dds_cfg;
+//          dds_mode_stored.mode = dds_cfg_stored.mode;
+//          tims.opMode = dds_mode_stored.mode;
+          tims.opMode = pcd->data.dds_cfg.mode;
+          tims.T1Main = pcd->data.dds_cfg.period;
+          tims.fgen = pcd->data.dds_cfg.dds.impulse.fm.freq_start;
+          tims.tGen = pcd->data.dds_cfg.dds.impulse.fm.tau_d;
         }
       }
       break;
@@ -296,7 +301,8 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
         }
         else {
           // Возвращаем наверх текущий режим работы канала
-          pcd->data.dds_mode = dds_mode_stored;
+          // pcd->data.dds_mode = dds_mode_stored;
+          pcd->data.dds_mode.mode = tims.opMode;
           to_send += sizeof(DDS_MODE);
         }
       }
@@ -309,10 +315,7 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
           pcd->head.err = ERR_HW_MODE;
         }
         else {
-          pcd->head.err = ERR_SUCCESS;
-          dds_mode_stored = pcd->data.dds_mode;
-          dds_cfg_stored.mode = dds_mode_stored.mode;
-          tims.opMode = dds_mode_stored.mode;
+          tims.opMode = pcd->data.dds_mode.mode;
         }
       }
       break;
@@ -324,8 +327,8 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
         }
         else {
           // Возвращаем наверх текущее значение мощности излучения для заданного канала
-          pcd->head.err = ERR_SUCCESS;
-          pcd->data.pwr_cfg = dds_pwrCfg_stored;
+          pcd->data.pwr_cfg.channel = 0;
+          pcd->data.pwr_cfg.level = tims.kpd;
           to_send += sizeof(TXR_PWR_CFG);
         }
       }
@@ -334,19 +337,16 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
         if( pcd->data.pwr_cfg.channel > MAX_CHANNELS_NUM ){
           pcd->head.err = ERR_HW_CHANNEL_NUM;
         }
-        else if( (byteNum != sizeof(DDS_MODE)) ||
-                  (pcd->data.dds_mode.mode > 2) ){
+        else if( (byteNum != sizeof(TXR_PWR_CFG)) ||
+                  (pcd->data.pwr_cfg.level > 100) ){
           pcd->head.err = ERR_HW_MODE;
         }
         else {
           // Устанавливаем новое значение мощности излучения для канала
-          dds_pwrCfg_stored = pcd->data.pwr_cfg;
-          tims.kpd = dds_pwrCfg_stored.level;
-          pcd->head.err = ERR_SUCCESS;
+          tims.kpd = pcd->data.pwr_cfg.level;
         }
       }
       break;
-
     case CMD_PRESSURE:
       break;
 
@@ -362,22 +362,18 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
     case CMD_GET_SW_VER:
       // Возвращаем наверх версию ПО микроконтроллера
       pcd->data.word = s_wSoftVersion;
-      pcd->head.err = ERR_SUCCESS;
       to_send += sizeof(u16);
       break;
 
     case CMD_STOP_ALL:
       // Остановка всех каналов
-      pcd->head.err = ERR_SUCCESS;
-      dds_mode_stored.mode = DDS_MODE_STOP;
-      dds_cfg_stored.mode = DDS_MODE_STOP;
       tims.opMode = DDS_MODE_STOP;
       break;
     case  CMD_NET_CFG_SOCKET_HW:
       if( pcd->head.dir == CMD_DIR_READ ){
         //read net config
         pcd->head.err = ReadNetCfgFromFlash(&pcd->data.net_cfg);
-        pcd->data.net_cfg = localNetCfg;
+//        pcd->data.net_cfg = localNetCfg;
         if( pcd->head.err == ERR_SUCCESS )
         {
           to_send += sizeof(tNetCfg );
@@ -427,22 +423,21 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
     case CMD_SET_FREQ_SAMPLING:
       if( pcd->head.dir == CMD_DIR_READ ) {
         // Возвращаем наверх установленное значение частоты дискретизации
-        pcd->data.freq_sampling = sampling_freq_stored;
-        pcd->head.err = ERR_SUCCESS;
-        to_send += sizeof(u32);
+        pcd->data.freq_sampling = tims.fAdc;
+        to_send += sizeof(pcd->data.freq_sampling);
       }
       else {
-        // Уставливаем новое значение частоты дискретизации
-        if( (pcd->data.freq_sampling > (FADC*1.5)) ||
+        if( (byteNum != sizeof( pcd->data.freq_sampling )) ){
+          pcd->head.err = ERR_PARAM_NET_CFG;
+        }
+        else if( (pcd->data.freq_sampling > (FADC*1.5)) ||
             (pcd->data.freq_sampling < (FADC/1.5))){
           pcd->head.err = ERR_PARAM_FREQ;
-          tims.fAdc = FADC;
         }
         else {
-          pcd->head.err = ERR_SUCCESS;
+          // Уставливаем новое значение частоты дискретизации
           tims.fAdc = pcd->data.freq_sampling;
         }
-        sampling_freq_stored = tims.fAdc;
       }
       break;
     case CMD_GAIN_CFG:
@@ -456,21 +451,13 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
       else
       {
         // Устанавливаем новое значение усиления для канала
-        u8 status = ERR_SUCCESS;
-
-        // Значение которым необходимо заполнить таблицу вару
-        u16 varuTableValue = GetVaruValueFromGainValue(pcd->data.gain_cfg.level);
-        // Записываем неизменное значение ВАРУ
-        for(uint16_t i = 0; i < DAC_SAMPLE_NUM; i++ ){
-          dacData[i] = varuTableValue;
+        if( (byteNum != sizeof( GAIN_CFG )) ){
+          pcd->head.err = ERR_PARAM_NET_CFG;
         }
-
-        // @insert Добавляем необходимые действия по формированию и установке новой таблицы ВАРУ
-        //         переменную status устанавливаем кодом ошибки при обнаружении такой
-
-        pcd->head.err = status;
-        if(pcd->head.err == ERR_SUCCESS)
-          SaveGainCfg(pcd->data.gain_cfg.channel, &pcd->data.gain_cfg, byteNum );
+        else {
+          varuLevel = pcd->data.gain_cfg.level;
+          dacDataInit( varuLevel, DAC_SAMPLE_NUM );
+        }
       }
       break;
     case CMD_PERFORM_SINGLE_SHOT:
@@ -480,39 +467,12 @@ static void Server( struct tcp_pcb *pcb, uint16_t byteNum ) {
       break;
   }
   tcp_write(pcb,(const void*)pcd,to_send,0);
-  // Пытаемся применить новые настройки
-  if( (TIM3->CR1 & TIM_CR1_CEN) == 0 ){
-    // Главный таймер остановлен - можно применять новае настройки
-    firstSwProcess();
+  if(pcd->head.err == ERR_SUCCESS){
+    // Пытаемся применить новые настройки
+    if( (TIM3->CR1 & TIM_CR1_CEN) == 0 ){
+      // Главный таймер остановлен - можно применять новае настройки
+      firstSwProcess();
+    }
   }
 }
 
-u16 GetVaruValueFromGainValue(u16 gain_value) {
-  u16 varu_value;
-  if( (gain_value > 0) && (gain_value < 14) ) {
-      varu_value = 307 * gain_value + (gain_value - 1);
-  }
-  else if( gain_value == 14 ){
-      varu_value = 4095;
-  }
-  else {
-      varu_value = 1;
-  }
-
-  return varu_value;
-}
-
-u16 GetGainValueFromVaruValue(u16 varu_value){
-  u16 gain_value;
-
-  if(varu_value == 4095) {
-    gain_value = 14;
-  }
-  else if( (varu_value <= 1) || (varu_value > 4095)){
-    gain_value = 0;
-  }
-  else {
-    gain_value = varu_value / 307;
-  }
-  return gain_value;
-}

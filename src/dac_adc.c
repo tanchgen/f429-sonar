@@ -11,19 +11,21 @@
 
 #include "gpio.h"
 #include "my_time.h"
-#include "eth.h"
 #include "dac_adc.h"
 
 uint16_t dacData[DAC_SAMPLE_NUM];
 uint16_t adcData[ADC_SAMPLE_NUM];
 volatile uint8_t fullAdcDma = 0;
-volatile uint32_t dmaCount = 0;
+uint8_t varuLevel = 0;
+
+uint16_t GetVaruValueFromGainValue(uint16_t gain_value);
+uint16_t GetGainValueFromVaruValue(uint16_t varu_value);
 
 void dacInit( void ){
 	dacGpioInit();
 
 	// Инициализация массива данных DAC
-	dacDataInit( dacData, DAC_SAMPLE_NUM );
+	dacDataInit( varuLevel, DAC_SAMPLE_NUM );
 
 	// Инициализация DAC
   DMA_InitTypeDef DMA_InitStructure;
@@ -79,12 +81,18 @@ void dacInit( void ){
 
 }
 
-void dacDataInit( uint16_t *pvaru, uint16_t smplNum ){
-	uint16_t k = 40960/smplNum;
-
-	for(uint16_t i = 0; i < smplNum; i++ ){
-		*pvaru++ = (k * i)/10;
-	}
+void dacDataInit( uint8_t vLevel, uint16_t smplNum ){
+//	uint16_t k = 40960/smplNum;
+//
+//	for(uint16_t i = 0; i < smplNum; i++ ){
+//		*pvaru++ = (k * i)/10;
+//	}
+  // Значение которым необходимо заполнить таблицу вару
+  u16 varuTableValue = GetVaruValueFromGainValue(vLevel);
+  // Записываем неизменное значение ВАРУ
+  for(uint16_t i = 0; i < smplNum; i++ ){
+    dacData[i] = varuTableValue;
+  }
 
 }
 
@@ -199,4 +207,34 @@ void adcProcess( DMA_Stream_TypeDef * DMA_Streamx ){
 
 	// В случае выборки по таймеру окончания Главного цикла будем выбирать из следующей половины
 	fullAdcDma = !fullAdcDma;
+}
+
+uint16_t GetVaruValueFromGainValue(uint16_t gain_value) {
+  uint16_t varu_value;
+  if( (gain_value > 0) && (gain_value < 14) ) {
+      varu_value = 307 * gain_value + (gain_value - 1);
+  }
+  else if( gain_value == 14 ){
+      varu_value = 4095;
+  }
+  else {
+      varu_value = 1;
+  }
+
+  return varu_value;
+}
+
+uint16_t GetGainValueFromVaruValue(uint16_t varu_value){
+  uint16_t gain_value;
+
+  if(varu_value == 4095) {
+    gain_value = 14;
+  }
+  else if( (varu_value <= 1) || (varu_value > 4095)){
+    gain_value = 0;
+  }
+  else {
+    gain_value = varu_value / 307;
+  }
+  return gain_value;
 }

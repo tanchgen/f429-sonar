@@ -10,11 +10,12 @@
 
 void tim3GpioInit( void ){
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-	// TODO: ------- Для теста - в рабочем варианте надо убрать ----------------
+#if EXT_START      // ------- Для теста запуска от внешнего пина ----------------
 	// Управляющий пин PD4
 	GPIOD->MODER |= (0x1 << (4 * 2));
 	GPIOD->OSPEEDR |= (0x2 << (4 * 2));
 	GPIOD->BSRRL |= GPIO_Pin_4;
+#endif // EXT_START
 	// Выход TIM3_CH1 PB4
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
 	GPIOB->MODER |= (0x2 << (4 * 2));

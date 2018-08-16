@@ -89,7 +89,7 @@ void udpInit(void){
 //      }
 //   }
      printf("can not create pcb");
-   }
+   } 
    else {
       err = udp_bind(upcb, (ip_addr_t *)&(localNetCfg.net_hw_ip), UDP_SERVER_PORT);
 
