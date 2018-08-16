@@ -14,9 +14,10 @@
 #define ADC_SAMPLE_NUM		(OUTBUF_SIZE)     // Количество выборок АЦП = размер UDP-пакета
 
 extern uint16_t adcData[];
+extern uint8_t varuLevel;
 
 void dacInit( void );
-void dacDataInit( uint16_t *pvaru, uint16_t smplNum );
+void dacDataInit( uint8_t vLevel, uint16_t smplNum );
 void adcInit( void );
 void dacReset( void );
 void adcProcess( DMA_Stream_TypeDef * DMA_Streamx );
