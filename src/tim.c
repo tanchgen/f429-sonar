@@ -43,7 +43,7 @@ void tInit( void ){
 	tims.mainMode = MAINMODE_CYCLE;
 //	tims.tSw = 0;						// Стартовый импульс (задержка SW)
 //	timsPrev.tSw = 0;
-	tims.tGen = TGEN;			  	// Длительность генерации импульсов излучателя (счетчик импульсов)
+	tims.tGen = TGEN;			  	// Длительность генерации импульсов излучателя (в мкс)
 	timsPrev.tGen = TGEN;
 	tims.fgen	= FGEN;					// Частота излучателя
 	timsPrev.fgen	= FGEN;
