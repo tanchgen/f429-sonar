@@ -91,7 +91,7 @@ void tim8GpioInit( void ){
 	GPIOA->OSPEEDR |= (0x3 << (6 * 2));
 //	GPIOA->BSRRL |= GPIO_Pin_3;
   // Альтернативная функция PA6 - AF3 = TIM8_BKIN
-	GPIOA->AFR[0] |= (0x3 << (6 * 4));		// PC6
+	GPIOA->AFR[0] |= (0x3 << (6 * 4));		// PA6
 
 }
 

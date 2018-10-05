@@ -313,7 +313,7 @@ void tim2Init( void ){
 	// CC2REF signal is used as trigger output (TRGO)
 	TIM2->CR2 = (TIM2->CR2 & ~TIM_CR2_MMS) | TIM_CR2_MMS_2 | TIM_CR2_MMS_0;
 
-	//------------ Для тестирования -----------------------
+	// В прерывании выключаем таймеры TIM4(АЦП) и TIM5(ЦАП)
 	TIM2->DIER |= TIM_DIER_CC2IE;
 	NVIC_EnableIRQ( TIM2_IRQn );
 
@@ -386,8 +386,8 @@ void tim5Init( void ){
   TIM5->CR1 |= TIM_CR1_CEN;
 
 	//------------ Для тестирования -----------------------
-	TIM5->DIER |= TIM_DIER_UIE;
-	NVIC_EnableIRQ( TIM5_IRQn );
+//	TIM5->DIER |= TIM_DIER_UIE;
+//	NVIC_EnableIRQ( TIM5_IRQn );
 
 #if LOGIC_ANALIZ  // Для логического анализатора
 	// Вывод TIM5_CH1
