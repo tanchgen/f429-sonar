@@ -30,7 +30,6 @@
 #include "eth.h"
 
 extern volatile uint8_t fullAdcDma;
-volatile uint32_t dmaCount;
 
 extern uint32_t mainModeCount;
 
@@ -38,7 +37,7 @@ extern uint32_t mainModeCount;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint16_t adcCount = 0;
+//uint16_t adcCount = 0;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -146,8 +145,8 @@ void TIM3_IRQHandler( void ){
 		firstSwProcess();
 		// Перезапуск таймера сонара
 		TIM2->EGR |= TIM_EGR_UG;
-//		TIM4->EGR |= TIM_EGR_UG;
-//		TIM5->EGR |= TIM_EGR_UG;
+		TIM4->EGR |= TIM_EGR_UG;
+		TIM5->EGR |= TIM_EGR_UG;
 		TIM2->CR1 |= TIM_CR1_CEN;
 		// Перезапуск таймера сонара
 		TIM1->EGR |= TIM_EGR_UG;
@@ -158,7 +157,6 @@ void TIM3_IRQHandler( void ){
 		// Обработка оцифрованных данных
 		if(DMA2_Stream0->NDTR != ADC_SAMPLE_NUM){
 		  // Увеличиваем счетчик пакетов
-		  dmaCount++;
 		  adcProcess( DMA2_Stream0 );
 		  // Переустанавливаем счетчик DMA-ADC
 		  if(DMA2_Stream0->CR & DMA_SxCR_EN){
@@ -243,7 +241,6 @@ void DMA2_Stream0_IRQHandler(void){
 	  return;
 	}
 	// TODO: Пересылка половины блока оцифрованных данных
-  dmaCount++;
 	adcProcess( DMA2_Stream0 );
 }
 
@@ -262,7 +259,6 @@ void DMA2_Stream3_IRQHandler(void){
 }
 
 void ADC_IRQHandler( void ){
-	adcCount++;
 	ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
 }
 

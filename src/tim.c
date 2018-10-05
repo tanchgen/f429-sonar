@@ -89,13 +89,8 @@ void timPrestart( void ){
   // Перезапуск таймера сонара
   TIM1->EGR |= TIM_EGR_UG;
   // НЕ-Однопульсовый режим
-  TIM3->CR1 &= ~TIM_CR1_OPM;
-  // Тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
-  TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
-  TIM3->CR1 |= TIM_CR1_CEN;
 
 }
-
 
 void mainModeSet( void ){
 
@@ -107,12 +102,11 @@ void mainModeSet( void ){
 		TIM3->SMCR |= TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger;
 	}
 	else {
-		// НЕ-Однопульсовый режим
+		// Не однопульсовый режим
 		TIM3->CR1 &= ~TIM_CR1_OPM;
 		// Выключаем тригерный режим: ResetMode, Запуск от внешнего источника падающий фронт
 		TIM3->SMCR &= ~(TIM_SMCR_ETP | TIM_TS_ETRF | TIM_SlaveMode_Trigger);
 	}
-	TIM3->EGR |= TIM_EGR_UG;
 	timsPrev.mainMode = tims.mainMode;
 }
 
@@ -313,11 +307,13 @@ void tim2Init( void ){
 	// CC2REF signal is used as trigger output (TRGO)
 	TIM2->CR2 = (TIM2->CR2 & ~TIM_CR2_MMS) | TIM_CR2_MMS_2 | TIM_CR2_MMS_0;
 
-	// В прерывании выключаем таймеры TIM4(АЦП) и TIM5(ЦАП)
-	TIM2->DIER |= TIM_DIER_CC2IE;
-	NVIC_EnableIRQ( TIM2_IRQn );
+	//------------ Для тестирования -----------------------
+//	TIM2->DIER |= TIM_DIER_CC2IE;
+//	NVIC_EnableIRQ( TIM2_IRQn );
 
   TIM2->CNT = TIM2->ARR-2;
+  // Режим вывода PWM2 CH2
+  TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 
 #if LOGIC_ANALIZ  // Для логического анализатора
 	// Вывод TIM2_CH1
@@ -328,8 +324,6 @@ void tim2Init( void ){
 
 	// Вывод TIM2_CH2
 	TIM2->CCER |= TIM_CCER_CC2E;
-	// Режим вывода PWM2 CH2
-	TIM2->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1; // | TIM_CCMR1_OC2M_0;
 #endif
 }
 
@@ -352,7 +346,7 @@ void tim8Init( void ){
 #endif
 
 #if LOGIC_ANALIZ  // Для логического анализатора
-	// Вывод TIM2_CH1
+	// Вывод TIM8_CH1
 	TIM8->CCER |= TIM_CCER_CC1E;
 //	TIM2->CCER |= TIM_CCER_CC1P;
 	// Режим вывода PWM1 CH1
