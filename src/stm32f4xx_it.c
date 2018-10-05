@@ -145,8 +145,8 @@ void TIM3_IRQHandler( void ){
 		firstSwProcess();
 		// Перезапуск таймера сонара
 		TIM2->EGR |= TIM_EGR_UG;
-//		TIM4->EGR |= TIM_EGR_UG;
-//		TIM5->EGR |= TIM_EGR_UG;
+		TIM4->EGR |= TIM_EGR_UG;
+		TIM5->EGR |= TIM_EGR_UG;
 		TIM2->CR1 |= TIM_CR1_CEN;
 		// Перезапуск таймера сонара
 		TIM1->EGR |= TIM_EGR_UG;
